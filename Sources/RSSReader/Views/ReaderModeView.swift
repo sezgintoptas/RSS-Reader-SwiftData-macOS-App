@@ -333,7 +333,32 @@ struct ReaderModeView: View {
             isLoading = false
             return
         }
-        
+
+        // YouTube linkleri için özel reader modu
+        if let videoID = ReadabilityExtractor.extractYouTubeID(from: linkString) {
+            var blocks: [ReadabilityExtractor.ContentBlock] = []
+
+            // 1. YouTube oynat kartı
+            blocks.append(.youtube(videoID: videoID))
+
+            // 2. RSS'ten gelen açıklamayı düz metne çevir (entity'ler dahil)
+            let rawContent = article.content ?? ""
+            let plain = rawContent.htmlToPlainText()
+            if !plain.isEmpty {
+                blocks.append(.paragraph(text: plain))
+            }
+
+            extractedArticle = ReadabilityExtractor.ExtractedArticle(
+                title: article.title,
+                blocks: blocks,
+                imageURL: URL(string: "https://img.youtube.com/vi/\(videoID)/maxresdefault.jpg"),
+                siteName: article.feed?.title
+            )
+            isLoading = false
+            return
+        }
+
+        // Normal makaleler için web'den çek
         Task {
             do {
                 let result = try await ReadabilityExtractor.extract(from: url)
