@@ -7,10 +7,6 @@ struct ContentView: View {
     @State private var showingManageFeeds: Bool = false
 
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.scenePhase) private var scenePhase
-    
-    // Her 5 dakikada bir (300 saniye) tetiklenecek Timer
-    let timer = Timer.publish(every: 300, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationSplitView {
@@ -30,14 +26,6 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
             }
         }
-        .onReceive(timer) { _ in
-            syncBackground("Timer (5 dk)")
-        }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
-            if newPhase == .active {
-                syncBackground("Uygulama Aktif (Öne Geldi)")
-            }
-        }
         // MARK: - Gecikmeli Okundu İşaretleme
         .onChange(of: selectedArticle) { oldArticle, newArticle in
             // Kullanıcı başka bir makaleye geçtiğinde, önceki makaleyi okundu yap
@@ -49,15 +37,6 @@ struct ContentView: View {
         .sheet(isPresented: $showingManageFeeds) {
             ManageFeedsView()
                 .frame(minWidth: 600, minHeight: 450)
-        }
-    }
-    
-    private func syncBackground(_ reason: String) {
-        print("Otomatik Senkronizasyon Tetiklendi: \(reason)")
-        let container = modelContext.container
-        Task {
-            let engine = SyncEngine(modelContainer: container)
-            await engine.syncAllFeeds()
         }
     }
 }

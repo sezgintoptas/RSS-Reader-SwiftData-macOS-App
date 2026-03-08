@@ -22,7 +22,7 @@ final class Folder {
 final class Feed {
     var id: UUID = UUID()
     var title: String = ""
-    var url: String = ""
+    @Attribute(.unique) var url: String = ""
     var siteUrl: String?
     var lastUpdated: Date?
     var sortIndex: Int = 0

@@ -1,3 +1,11 @@
+## 🆕 v1.12.0 — 2026-03-09
+
+### ✨ Yenilikler (OPML & YouTube İyileştirmeleri)
+- **OPML Duplikasyon Koruması:** OPML içe aktarırken aynı beslemeleri (URL bazlı) tekrar ekleme sorunu giderildi. Artık mükerrer kayıtlar otomatik atlanıyor.
+- **YouTube Reader Mode:** YouTube üzerinden gelen RSS makaleleri artık varsayılan olarak saf okuma modunda (Reader Mode) açılıyor, daha temiz bir deneyim sağlıyor.
+- **Email HTML Düzeltmeleri:** Paylaşılan e-postalarda karakterlerin (\&, \<, \>) çift encode (double-encoding) edilme hatası düzeltildi.
+- **Arayüz Kararlılığı:** Sidebar ve besleme yönetimi işlemlerindeki kararlılık artırıldı.
+
 ## 🆕 v1.11.0 — 2026-03-08
 
 ### ✨ Yenilikler (E-posta Paylaşımı İyileştirmeleri)

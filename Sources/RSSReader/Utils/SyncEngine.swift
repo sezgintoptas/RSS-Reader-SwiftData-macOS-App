@@ -228,16 +228,35 @@ actor SyncEngine {
         let effectiveLimit = limit > 0 ? limit : 1000
 
         do {
+            // ✅ Sadece okunmamış VE favori olmayan makaleleri temizle
+            // Okunmuş makaleler korunur → tekrar sync'te "okunmamış" olarak geri dönmez
             let descriptor = FetchDescriptor<Article>(
-                predicate: #Predicate<Article> { !$0.isStarred },
+                predicate: #Predicate<Article> { !$0.isStarred && !$0.isRead },
                 sortBy: [SortDescriptor(\Article.publishedDate, order: .reverse)]
             )
-            let nonStarred = try modelContext.fetch(descriptor)
-            if nonStarred.count > effectiveLimit {
-                let toDelete = Array(nonStarred.dropFirst(effectiveLimit))
+            let candidates = try modelContext.fetch(descriptor)
+            if candidates.count > effectiveLimit {
+                let toDelete = Array(candidates.dropFirst(effectiveLimit))
                 toDelete.forEach { modelContext.delete($0) }
                 try modelContext.save()
-                logger.info("🗑 \(toDelete.count) eski makale silindi (limit: \(effectiveLimit))")
+                logger.info("🗑 \(toDelete.count) eski okunmamış makale silindi (limit: \(effectiveLimit))")
+            }
+            
+            // İkinci aşama: Çok eski okunmuş makaleleri de sil (30 günden eski)
+            let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+            let oldReadDescriptor = FetchDescriptor<Article>(
+                predicate: #Predicate<Article> { $0.isRead && !$0.isStarred && $0.publishedDate != nil }
+            )
+            let oldReadArticles = try modelContext.fetch(oldReadDescriptor)
+                .filter { article in
+                    guard let date = article.publishedDate else { return false }
+                    return date < thirtyDaysAgo
+                }
+            
+            if !oldReadArticles.isEmpty {
+                oldReadArticles.forEach { modelContext.delete($0) }
+                try modelContext.save()
+                logger.info("🗑 \(oldReadArticles.count) eski okunmuş makale silindi (30+ gün)")
             }
         } catch {
             logger.error("Arşiv temizliği hatası: \(error.localizedDescription)")

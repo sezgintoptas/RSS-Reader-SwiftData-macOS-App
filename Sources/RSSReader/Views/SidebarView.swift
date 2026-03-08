@@ -162,6 +162,16 @@ struct SidebarView: View {
     
     private func addDynamicOPML() {
         guard let _ = URL(string: dynamicOPMLURL), !dynamicOPMLURL.isEmpty else { return }
+        
+        // ✅ Duplikasyon kontrolü
+        let targetUrl = dynamicOPMLURL
+        let descriptor = FetchDescriptor<DynamicOPMLSubscription>(predicate: #Predicate { $0.url == targetUrl })
+        if (try? modelContext.fetch(descriptor).first) != nil {
+            print("⚠️ Bu OPML aboneliği zaten mevcut: \(dynamicOPMLURL)")
+            dynamicOPMLURL = ""
+            return
+        }
+        
         let subscription = DynamicOPMLSubscription(url: dynamicOPMLURL)
         modelContext.insert(subscription)
         dynamicOPMLURL = ""
@@ -179,34 +189,87 @@ struct SidebarView: View {
         
         if panel.runModal() == .OK, let url = panel.url {
             do {
+                // ✅ Import öncesi otomatik yedekleme (güvenlik ağı)
+                BackupManager.shared.exportBackup(modelContext: modelContext)
+                
                 let data = try Data(contentsOf: url)
                 let parser = OPMLParser()
                 let result = parser.parse(data: data)
                 
+                var importedFeeds = 0
+                var skippedFeeds = 0
+                
                 for parsedFolder in result.folders {
-                    let folder = Folder(name: parsedFolder.name)
-                    modelContext.insert(folder)
+                    let folder = getOrCreateLocalFolder(name: parsedFolder.name)
                     
                     for parsedFeed in parsedFolder.feeds {
-                        let feed = Feed(title: parsedFeed.title, url: parsedFeed.xmlUrl, siteUrl: parsedFeed.siteUrl, folder: folder)
-                        modelContext.insert(feed)
+                        if getOrCreateLocalFeed(title: parsedFeed.title, url: parsedFeed.xmlUrl, siteUrl: parsedFeed.siteUrl, folder: folder) {
+                            importedFeeds += 1
+                        } else {
+                            skippedFeeds += 1
+                        }
                     }
                 }
                 
                 for parsedFeed in result.feeds {
-                    let feed = Feed(title: parsedFeed.title, url: parsedFeed.xmlUrl, siteUrl: parsedFeed.siteUrl, folder: nil)
-                    modelContext.insert(feed)
+                    if getOrCreateLocalFeed(title: parsedFeed.title, url: parsedFeed.xmlUrl, siteUrl: parsedFeed.siteUrl, folder: nil) {
+                        importedFeeds += 1
+                    } else {
+                        skippedFeeds += 1
+                    }
                 }
+                
+                try? modelContext.save()
+                print("✅ OPML içe aktarıldı: \(importedFeeds) yeni, \(skippedFeeds) atlandı (zaten mevcut)")
             } catch {
                 print("OPML okuma hatası: \(error)")
             }
         }
     }
     
+    /// Klasörü ada göre ara — yoksa oluştur, varsa mevcut olanı döndür
+    private func getOrCreateLocalFolder(name: String) -> Folder {
+        let folderName = name
+        let descriptor = FetchDescriptor<Folder>(predicate: #Predicate { $0.name == folderName })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            return existing
+        }
+        let newFolder = Folder(name: name)
+        modelContext.insert(newFolder)
+        return newFolder
+    }
+    
+    /// Feed'i URL'ye göre ara — yoksa oluştur (true döner), varsa mevcut olanı koru (false döner)
+    @discardableResult
+    private func getOrCreateLocalFeed(title: String, url: String, siteUrl: String?, folder: Folder?) -> Bool {
+        let targetUrl = url
+        let descriptor = FetchDescriptor<Feed>(predicate: #Predicate { $0.url == targetUrl })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            // Mevcut feed — sadece klasör ataması yoksa güncelle
+            if existing.folder == nil, let folder = folder {
+                existing.folder = folder
+            }
+            return false // Yeni eklenmedi
+        }
+        let newFeed = Feed(title: title, url: url, siteUrl: siteUrl, folder: folder)
+        modelContext.insert(newFeed)
+        return true // Yeni eklendi
+    }
+    
     // MARK: - RSS Ekleme
     
     private func addRSS() {
         guard let _ = URL(string: newRSSURL), !newRSSURL.isEmpty else { return }
+        
+        // ✅ Duplikasyon kontrolü
+        let targetUrl = newRSSURL
+        let descriptor = FetchDescriptor<Feed>(predicate: #Predicate { $0.url == targetUrl })
+        if (try? modelContext.fetch(descriptor).first) != nil {
+            print("⚠️ Bu besleme zaten mevcut: \(newRSSURL)")
+            newRSSURL = ""
+            return
+        }
+        
         let newFeed = Feed(title: newRSSURL, url: newRSSURL, folder: nil)
         modelContext.insert(newFeed)
         newRSSURL = ""
