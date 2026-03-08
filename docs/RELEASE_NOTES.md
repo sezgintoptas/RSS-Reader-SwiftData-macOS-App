@@ -1,3 +1,12 @@
+## 🆕 v1.13.0 — 2026-03-09
+
+### ✨ Yenilikler (Google Gemini AI Entegrasyonu)
+- **AI Makale Özeti:** Makale detay görünümünde ✨ "Özetle" butonuna basarak Google Gemini 2.0 Flash ile anında Türkçe özet alın
+- **Kategori Tespiti:** Apple NaturalLanguage framework ile her makale otomatik kategorize edilir (🤖 Yapay Zeka, 💻 Teknoloji, ⚽️ Spor vb.)
+- **Duygu Analizi:** Her makalenin tonu otomatik olarak analiz edilir (😊 Olumlu / 😐 Nötr / 😟 Olumsuz)
+- **Ayarlar → Yapay Zeka:** Yeni sekme — Gemini API anahtarınızı girin, bağlantıyı test edin. API key [aistudio.google.com](https://aistudio.google.com/apikey) adresinden ücretsiz alınabilir
+- **Offline Fallback:** API anahtarı girilmemişse extractive özet (ilk 3 cümle) otomatik devreye girer
+
 ## 🆕 v1.12.0 — 2026-03-09
 
 ### ✨ Yenilikler (OPML & YouTube İyileştirmeleri)

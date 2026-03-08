@@ -46,12 +46,17 @@ struct SettingsView: View {
                     Label("E-posta", systemImage: "envelope")
                 }
 
+            AISettingsTab()
+                .tabItem {
+                    Label("Yapay Zeka", systemImage: "sparkles")
+                }
+
             UpdateTab()
                 .tabItem {
                     Label("Güncelleme", systemImage: "arrow.triangle.2.circlepath")
                 }
         }
-        .frame(width: 520, height: 480)
+        .frame(width: 520, height: 500)
     }
 }
 
@@ -619,6 +624,120 @@ private struct EmailTab: View {
 
     private func saveRecipients() {
         ResendEmailManager.saveRecipients(recipients)
+    }
+}
+
+// MARK: - Yapay Zeka Ayarları Sekmesi
+
+private struct AISettingsTab: View {
+    @AppStorage("geminiApiKey") private var apiKey: String = ""
+    @State private var testStatus: TestStatus = .idle
+
+    enum TestStatus {
+        case idle, testing, success, failed(String)
+    }
+
+    var body: some View {
+        Form {
+            Section("Google Gemini API") {
+                SecureField("API Anahtarı (AIza...)", text: $apiKey)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: apiKey) { _, _ in testStatus = .idle }
+
+                HStack {
+                    Link("AI Studio'dan ücretsiz al →",
+                         destination: URL(string: "https://aistudio.google.com/apikey")!)
+                        .font(.caption)
+                        .foregroundStyle(Color.accentColor)
+                    Spacer()
+                    // Test butonu
+                    if case .testing = testStatus {
+                        HStack(spacing: 4) {
+                            ProgressView().scaleEffect(0.6)
+                            Text("Test ediliyor…").font(.caption).foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Button("Bağlantıyı Test Et") {
+                            Task { await testConnection() }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(apiKey.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                }
+
+                switch testStatus {
+                case .idle:
+                    EmptyView()
+                case .testing:
+                    EmptyView()
+                case .success:
+                    Label("Bağlantı başarılı ✓", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green).font(.callout)
+                case .failed(let msg):
+                    Label(msg, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red).font(.callout)
+                }
+            }
+
+            Section("Model") {
+                HStack {
+                    Text("Model")
+                    Spacer()
+                    Text("Gemini 2.0 Flash")
+                        .foregroundStyle(.secondary)
+                        .monospaced()
+                }
+                Text("Ücretsiz katmanda dakikada 15 istek, günde 1.500 istek hakkı bulunur. Yoğun kullanımda Gemini 1.5 Pro kullanmayı değerlendirin.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Gizlilik") {
+                Text("Makalelerinizin yalnızca ilk ~4.000 karakteri Google'ın API'sine gönderilir. Kişisel veriniz işlenmez. Detaylar: ai.google.dev/terms")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func testConnection() async {
+        guard !apiKey.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        testStatus = .testing
+
+        let urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=\(apiKey)"
+        guard let url = URL(string: urlStr) else {
+            testStatus = .failed("Geçersiz URL")
+            return
+        }
+
+        let body: [String: Any] = [
+            "contents": [["parts": [["text": "Merhaba, test."]]]],
+            "generationConfig": ["maxOutputTokens": 10]
+        ]
+
+        do {
+            var req = URLRequest(url: url)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = try JSONSerialization.data(withJSONObject: body)
+            req.timeoutInterval = 15
+
+            let (_, response) = try await URLSession.shared.data(for: req)
+            if let http = response as? HTTPURLResponse {
+                if http.statusCode == 200 {
+                    testStatus = .success
+                } else if http.statusCode == 400 {
+                    testStatus = .failed("Geçersiz API anahtarı (400)")
+                } else if http.statusCode == 403 {
+                    testStatus = .failed("Erişim reddedildi (403)")
+                } else {
+                    testStatus = .failed("HTTP \(http.statusCode)")
+                }
+            }
+        } catch {
+            testStatus = .failed(error.localizedDescription)
+        }
     }
 }
 

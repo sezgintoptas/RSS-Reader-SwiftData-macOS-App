@@ -80,6 +80,16 @@ final class Article {
     var isRead: Bool = false
     var isStarred: Bool = false
     
+    // MARK: - AI Metadata
+    /// Apple Intelligence tarafından oluşturulan kısa özet
+    var aiSummary: String? = nil
+    /// NaturalLanguage ile tespit edilen kategori (Teknoloji, Spor, vb.)
+    var aiCategory: String? = nil
+    /// Duygu analizi sonucu (positive / neutral / negative)
+    var aiSentiment: String? = nil
+    /// AI işleme tamamlandı mı?
+    var isAIProcessed: Bool = false
+
     var feed: Feed?
     
     init(id: String, title: String, link: String? = nil, content: String? = nil, publishedDate: Date? = nil, isRead: Bool = false, isStarred: Bool = false, feed: Feed? = nil) {

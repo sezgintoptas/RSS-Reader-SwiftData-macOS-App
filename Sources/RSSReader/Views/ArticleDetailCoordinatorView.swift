@@ -6,13 +6,14 @@ import SwiftUI
 /// makaleyi uygun görünüme yönlendiren koordinatör.
 struct ArticleDetailCoordinatorView: View {
     let article: Article
-    
+
     @AppStorage("readingMode") private var readingModeRaw: String = ReadingMode.inApp.rawValue
-    
+    @State private var showAIPanel: Bool = false
+
     private var readingMode: ReadingMode {
         ReadingMode(rawValue: readingModeRaw) ?? .inApp
     }
-    
+
     var body: some View {
         Group {
             switch readingMode {
@@ -22,16 +23,29 @@ struct ArticleDetailCoordinatorView: View {
                 } else {
                     noLinkView
                 }
-                
             case .readerMode:
                 ReaderModeView(article: article)
-                
             case .externalSafari:
                 ExternalSafariView(article: article)
             }
         }
         .navigationTitle(article.title)
         .toolbar {
+            // ── AI Özetle Butonu (popover açar, menü bozulmaz)
+            ToolbarItem {
+                Button {
+                    showAIPanel.toggle()
+                } label: {
+                    Label(
+                        article.isAIProcessed ? "AI Özeti" : "Özetle",
+                        systemImage: "sparkles"
+                    )
+                }
+                .help(article.isAIProcessed ? "AI özetini göster" : "Makaleyi özetle")
+                .popover(isPresented: $showAIPanel, arrowEdge: .bottom) {
+                    AIArticleSummaryPanel(article: article)
+                }
+            }
             ToolbarItem {
                 ArticleMailToolbarButton(article: article)
             }
@@ -46,7 +60,7 @@ struct ArticleDetailCoordinatorView: View {
             }
         }
     }
-    
+
     private var noLinkView: some View {
         VStack(spacing: 12) {
             Image(systemName: "link.badge.plus")

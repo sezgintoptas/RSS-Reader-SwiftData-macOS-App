@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "RSSReader",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14)  // Minimum v14; Apple Intelligence #available(macOS 15, *) ile runtime'da kontrol edilir
     ],
     dependencies: [
         .package(url: "https://github.com/nmdias/FeedKit.git", from: "9.1.2"),
@@ -21,3 +21,4 @@ let package = Package(
         )
     ]
 )
+
