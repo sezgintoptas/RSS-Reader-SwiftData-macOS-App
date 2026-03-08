@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "feedkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nmdias/FeedKit.git",
+      "state" : {
+        "revision" : "68493a33d862c33c9a9f67ec729b3b7df1b20ade",
+        "version" : "9.1.2"
+      }
+    },
+    {
+      "identity" : "swiftsoup",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/scinfu/SwiftSoup.git",
+      "state" : {
+        "revision" : "dba183c96b2da4e4b80bb31b1e2e59cb9542b8fc",
+        "version" : "2.13.0"
+      }
+    }
+  ],
+  "version" : 2
+}

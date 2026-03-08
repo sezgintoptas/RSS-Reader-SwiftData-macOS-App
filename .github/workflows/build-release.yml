@@ -1,0 +1,148 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'           # v1.1.0, v1.2.0 gibi tag push'larında tetiklenir
+  workflow_dispatch:   # Manuel çalıştırma imkanı
+
+# Release oluşturabilmek için contents: write gerekli
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build macOS App
+    runs-on: macos-15   # Xcode 16 içeren en güncel runner
+
+    steps:
+      - name: Kodu Çek
+        uses: actions/checkout@v4
+
+      - name: Xcode 16 Seç
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || true
+
+      - name: Swift Versiyonunu Göster
+        run: swift --version
+
+      # ──────────────────────────────────────────
+      # Release Build
+      # ──────────────────────────────────────────
+      - name: Release Build
+        run: |
+          swift build -c release 2>&1
+          echo "✅ Build tamamlandı"
+
+      # ──────────────────────────────────────────
+      # .app Bundle oluştur
+      # ──────────────────────────────────────────
+      - name: .app Bundle Oluştur
+        run: |
+          set -e
+          VERSION="${{ github.ref_name }}"
+
+          APP_DIR="RSSReader.app/Contents/MacOS"
+          RES_DIR="RSSReader.app/Contents/Resources"
+          mkdir -p "$APP_DIR" "$RES_DIR"
+
+          cp ".build/release/RSSReader" "$APP_DIR/RSSReader"
+          chmod +x "$APP_DIR/RSSReader"
+
+          # App icon kopyala (varsa)
+          [ -f "AppIcon.icns" ] && cp "AppIcon.icns" "$RES_DIR/AppIcon.icns"
+
+          cat > "RSSReader.app/Contents/Info.plist" << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>RSSReader</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.sezgintoptas.rssreader</string>
+              <key>CFBundleName</key>
+              <string>RSSReader</string>
+              <key>CFBundleDisplayName</key>
+              <string>RSS Okuyucu</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleIconFile</key>
+              <string>AppIcon</string>
+              <key>CFBundleShortVersionString</key>
+              <string>${VERSION}</string>
+              <key>CFBundleVersion</key>
+              <string>${VERSION}</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>14.0</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>NSPrincipalClass</key>
+              <string>NSApplication</string>
+              <key>LSApplicationCategoryType</key>
+              <string>public.app-category.news</string>
+              <key>NSUserNotificationAlertStyle</key>
+              <string>alert</string>
+              <key>NSAppTransportSecurity</key>
+              <dict>
+                  <key>NSAllowsArbitraryLoads</key>
+                  <true/>
+              </dict>
+          </dict>
+          </plist>
+          PLIST
+
+          echo "✅ .app bundle hazır ($VERSION)"
+          ls -la RSSReader.app/Contents/
+
+      # ──────────────────────────────────────────
+      # Zip'le
+      # ──────────────────────────────────────────
+      - name: Zip Oluştur
+        run: |
+          zip -r RSSReader.app.zip RSSReader.app
+          echo "✅ Zip boyutu: $(du -sh RSSReader.app.zip | cut -f1)"
+
+      # ──────────────────────────────────────────
+      # Checksum (sha256)
+      # ──────────────────────────────────────────
+      - name: SHA256 Checksum
+        run: |
+          shasum -a 256 RSSReader.app.zip > RSSReader.app.zip.sha256
+          cat RSSReader.app.zip.sha256
+
+      # ──────────────────────────────────────────
+      # GitHub Release oluştur  
+      # ──────────────────────────────────────────
+      - name: GitHub Release Oluştur
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: "RSS Okuyucu ${{ github.ref_name }}"
+          body_path: docs/RELEASE_NOTES.md
+          fail_on_unmatched_files: false
+          files: |
+            RSSReader.app.zip
+            RSSReader.app.zip.sha256
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ──────────────────────────────────────────
+  # Eski release'leri temizle (son 3'ü kalsın)
+  # ──────────────────────────────────────────
+  cleanup:
+    name: Eski Sürümleri Temizle
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Son 3 hariç eski release'leri sil
+        uses: dev-drprasad/delete-older-releases@v0.3.4
+        with:
+          keep_latest: 3
+          delete_tags: false          # Tag'ları silme, sadece release'leri sil
+          delete_tag_pattern: "v*"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

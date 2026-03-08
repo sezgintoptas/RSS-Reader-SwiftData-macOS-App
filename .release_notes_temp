@@ -1,0 +1,7 @@
+Yeni Özellikler: Yerel Yedekleme ve Geri Yükleme
+- Kullanıcılar artık verilerini JSON formatında yedekleyebilir.
+- Yedeklenen veriler ~/Documents/RSSReader Backups/ klasörüne kaydedilir.
+- Yedek dosyalarından klasörler, beslemeler, favori makaleler ve okuma durumları geri yüklenebilir.
+- SwiftData ve CloudKit senkronizasyonu için iyileştirmeler yapıldı.
+- Çeşitli hata düzeltmeleri ve performans iyileştirmeleri.
+\u0004
