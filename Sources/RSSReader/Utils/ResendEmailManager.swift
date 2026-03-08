@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 // MARK: - E-posta Alıcı Modeli
 
@@ -110,13 +111,11 @@ final class ResendEmailManager: ObservableObject {
         let url = article.link ?? ""
         let urlEscaped = url.htmlEscaped
 
-        // İçerikten düz metin özeti oluştur (HTML taglarını temizle, ilk 600 karakter)
+        // İçerikten düz metin özeti oluştur (HTML entity'leri doğru çözer)
         let rawContent = article.content ?? ""
-        let plainContent = rawContent
-            .replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let plainContent = rawContent.htmlToPlainText()
         let preview = String(plainContent.prefix(600))
-        let previewEscaped = preview.isEmpty ? "" : preview.htmlEscaped + (plainContent.count > 600 ? "…" : "")
+        let previewEscaped = preview.isEmpty ? "" : preview.htmlEscaped + (plainContent.count > 600 ? "\u{2026}" : "")
 
         return """
         <!DOCTYPE html>
@@ -223,9 +222,32 @@ final class ResendEmailManager: ObservableObject {
     }
 }
 
-// MARK: - String HTML Escape
+// MARK: - String Yardımcı Metodları
 
 extension String {
+    /// HTML entity'leri çözerek ve tag'leri silerek düz metin döndürür.
+    /// NSAttributedString kullanarak &#252; gibi entity'leri doğru decode eder.
+    func htmlToPlainText() -> String {
+        guard !self.isEmpty else { return "" }
+        // NSAttributedString HTML entity'leri ve tag'leri otomatik çözer
+        if let data = self.data(using: .utf8),
+           let attributed = try? NSAttributedString(
+               data: data,
+               options: [
+                   .documentType: NSAttributedString.DocumentType.html,
+                   .characterEncoding: String.Encoding.utf8.rawValue
+               ],
+               documentAttributes: nil
+           ) {
+            return attributed.string
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        // Fallback: sadece tag'leri sil (entity'ler ham kalabilir)
+        return self
+            .replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var htmlEscaped: String {
         self
             .replacingOccurrences(of: "&", with: "&amp;")
