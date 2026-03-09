@@ -65,20 +65,26 @@ final class AIManager: ObservableObject {
 
     // MARK: - Google Gemini API
 
+    // Gemini yanıt yapısı — Codable ile güvenli parse
+    private struct GeminiResponse: Decodable {
+        let candidates: [Candidate]?
+        struct Candidate: Decodable {
+            let content: Content?
+            struct Content: Decodable {
+                let parts: [Part]?
+                struct Part: Decodable {
+                    let text: String?
+                }
+            }
+        }
+    }
+
     private func summarizeWithGemini(text: String, title: String) async -> String? {
-        // API key'i query param yerine header ile gönder (curl örneğiyle aynı yöntem)
+        // API key'i header ile gönder (curl örneğiyle aynı yöntem)
         let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(geminiModel):generateContent"
         guard let url = URL(string: urlString) else { return nil }
 
-        let prompt = """
-        Aşağıdaki makaleyi Türkçe olarak 2-3 cümleyle özetle. \
-        Sadece özet metnini yaz, başka açıklama ekleme.
-
-        Başlık: \(title)
-
-        İçerik:
-        \(text.prefix(4000))
-        """
+        let prompt = "Aşağıdaki makaleyi Türkçe olarak 2-3 cümleyle özetle. Sadece özet metnini yaz.\n\nBaşlık: \(title)\n\nİçerik: \(text.prefix(3000))"
 
         let body: [String: Any] = [
             "contents": [
@@ -86,7 +92,7 @@ final class AIManager: ObservableObject {
             ],
             "generationConfig": [
                 "temperature": 0.3,
-                "maxOutputTokens": 200
+                "maxOutputTokens": 500
             ]
         ]
 
@@ -94,12 +100,13 @@ final class AIManager: ObservableObject {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(apiKey, forHTTPHeaderField: "X-goog-api-key")  // ← header yöntemi
+            request.setValue(apiKey, forHTTPHeaderField: "X-goog-api-key")
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             request.timeoutInterval = 30
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
+            // HTTP hata kontrolü
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 let msg = String(data: data, encoding: .utf8) ?? "Bilinmeyen hata"
                 logger.error("Gemini API hatası (\(http.statusCode)): \(msg)")
@@ -107,21 +114,28 @@ final class AIManager: ObservableObject {
                 case 400: lastError = "Geçersiz istek — API anahtarını kontrol edin (400)"
                 case 401: lastError = "Yetkisiz — API anahtarı hatalı (401)"
                 case 403: lastError = "Erişim reddedildi — API etkin değil (403)"
-                case 404: lastError = "Model bulunamadı — API güncellemesi gerekebilir (404)"
+                case 404: lastError = "Model bulunamadı (404)"
                 case 429: lastError = "Kota aşıldı — günlük limit doldu (429)"
                 default:  lastError = "Gemini API Hatası: HTTP \(http.statusCode)"
                 }
                 return extractiveSummary(from: text)
             }
 
-            // JSON parse
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let candidates = json?["candidates"] as? [[String: Any]]
-            let content = candidates?.first?["content"] as? [String: Any]
-            let parts = content?["parts"] as? [[String: Any]]
-            let resultText = parts?.first?["text"] as? String
+            // Codable ile güvenli parse
+            let decoded = try JSONDecoder().decode(GeminiResponse.self, from: data)
+            let resultText = decoded.candidates?.first?.content?.parts?.first?.text
 
-            return resultText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let result = resultText?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !result.isEmpty {
+                logger.info("Gemini yanıtı: \(result.prefix(80))")
+                return result
+            } else {
+                // Parse başarılı ama metin yok — raw response'u logla
+                let raw = String(data: data, encoding: .utf8) ?? "-"
+                logger.warning("Gemini metin boş. Ham yanıt: \(raw.prefix(300))")
+                lastError = "Gemini yanıt verdi ama metin üretemedi."
+                return extractiveSummary(from: text)
+            }
 
         } catch {
             logger.error("Gemini istek hatası: \(error.localizedDescription)")

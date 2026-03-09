@@ -40,9 +40,18 @@ struct AIArticleSummaryPanel: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             } else if let error = aiManager.lastError {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
-                    .font(.callout)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                        .font(.callout)
+                    // Extractive fallback varsa göster
+                    if let summary = article.aiSummary {
+                        Divider()
+                        Text("Çıkarılan özet:")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text(summary).font(.callout)
+                    }
+                }
 
             } else if let summary = article.aiSummary {
                 Text(summary)
@@ -58,11 +67,25 @@ struct AIArticleSummaryPanel: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
 
+            } else if article.isAIProcessed {
+                // İşlendi ama özet üretilemedi
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Özet üretilemedi.", systemImage: "exclamationmark.circle")
+                        .foregroundStyle(.orange).font(.callout)
+                    Button {
+                        Task { await aiManager.analyze(article: article) }
+                    } label: {
+                        Label("Tekrar Dene", systemImage: "arrow.clockwise")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain).foregroundStyle(.secondary)
+                }
             } else {
                 Text("Henüz analiz edilmedi.")
                     .foregroundStyle(.secondary)
                     .font(.callout)
             }
+
         }
         .padding(16)
         .frame(width: 360)

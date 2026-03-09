@@ -1,4 +1,12 @@
-## 🆕 v1.13.2 — 2026-03-09
+## 🆕 v1.13.3 — 2026-03-09
+
+### 🐛 Düzeltmeler
+- **AI Özet Üretimi:** `[String:Any]` JSON zinciri → `Codable struct` ile değiştirildi; sessiz `nil` dönen parse hatası giderildi
+- **Hata Görünürlüğü:** `isAIProcessed=true` ama özet yok durumunda "Özet üretilemedi + Tekrar Dene" butonu gösteriliyor
+- **Fallback İyileştirmesi:** Gemini yanıt verse de metin üretemezse extractive özet otomatik gösterilir
+- **Log:** Ham API yanıtı artık loglanıyor — Xcode Console'dan debug kolaylaştı
+
+
 
 ### 🐛 Düzeltmeler
 - **Gemini API endpoint:** Model `gemini-flash-latest`, API key `X-goog-api-key` header'ı ile gönderiliyor (curl örneğiyle birebir aynı yöntem)
