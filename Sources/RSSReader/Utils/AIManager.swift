@@ -18,8 +18,8 @@ final class AIManager: ObservableObject {
         UserDefaults.standard.string(forKey: "geminiApiKey") ?? ""
     }
 
-    // Gemini 1.5 Flash — ücretsiz katmanda stabil, v1beta endpoint'i zorunlu
-    private let geminiModel = "gemini-1.5-flash-latest"
+    // gemini-flash-latest — kararlı, ücretsiz, v1beta endpoint
+    private let geminiModel = "gemini-flash-latest"
 
     private init() {}
 
@@ -66,7 +66,8 @@ final class AIManager: ObservableObject {
     // MARK: - Google Gemini API
 
     private func summarizeWithGemini(text: String, title: String) async -> String? {
-        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(geminiModel):generateContent?key=\(apiKey)"
+        // API key'i query param yerine header ile gönder (curl örneğiyle aynı yöntem)
+        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(geminiModel):generateContent"
         guard let url = URL(string: urlString) else { return nil }
 
         let prompt = """
@@ -93,6 +94,7 @@ final class AIManager: ObservableObject {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(apiKey, forHTTPHeaderField: "X-goog-api-key")  // ← header yöntemi
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             request.timeoutInterval = 30
 

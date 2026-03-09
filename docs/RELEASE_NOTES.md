@@ -1,4 +1,9 @@
-## 🆕 v1.13.1 — 2026-03-09
+## 🆕 v1.13.2 — 2026-03-09
+
+### 🐛 Düzeltmeler
+- **Gemini API endpoint:** Model `gemini-flash-latest`, API key `X-goog-api-key` header'ı ile gönderiliyor (curl örneğiyle birebir aynı yöntem)
+
+
 
 ### 🐛 Düzeltmeler
 - **Gemini API 404 Hatası:** Model adı `gemini-2.0-flash` → `gemini-1.5-flash-latest` olarak güncellendi (ücretsiz katmanda stabil ve erişilebilir model)

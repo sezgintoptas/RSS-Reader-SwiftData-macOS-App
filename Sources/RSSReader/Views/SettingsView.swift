@@ -683,7 +683,7 @@ private struct AISettingsTab: View {
                 HStack {
                     Text("Model")
                     Spacer()
-                    Text("Gemini 1.5 Flash")
+                    Text("Gemini Flash")
                         .foregroundStyle(.secondary)
                         .monospaced()
                 }
@@ -705,7 +705,7 @@ private struct AISettingsTab: View {
         guard !apiKey.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         testStatus = .testing
 
-        let urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=\(apiKey)"
+        let urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
         guard let url = URL(string: urlStr) else {
             testStatus = .failed("Geçersiz URL")
             return
@@ -720,6 +720,7 @@ private struct AISettingsTab: View {
             var req = URLRequest(url: url)
             req.httpMethod = "POST"
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.setValue(apiKey, forHTTPHeaderField: "X-goog-api-key")
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
             req.timeoutInterval = 15
 
