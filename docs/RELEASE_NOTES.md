@@ -1,4 +1,9 @@
-## 🆕 v1.13.3 — 2026-03-09
+## 🆕 v1.13.4 — 2026-03-09
+
+### 🐛 Düzeltmeler
+- **Ayarlar Penceresi:** Yapay Zeka ve Güncelleme sekmeleri artık görünür — pencere genişliği 520→620px'e çıkarıldı, yeniden boyutlandırılabilir yapıldı
+
+
 
 ### 🐛 Düzeltmeler
 - **AI Özet Üretimi:** `[String:Any]` JSON zinciri → `Codable struct` ile değiştirildi; sessiz `nil` dönen parse hatası giderildi

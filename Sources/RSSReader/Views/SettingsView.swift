@@ -56,7 +56,8 @@ struct SettingsView: View {
                     Label("Güncelleme", systemImage: "arrow.triangle.2.circlepath")
                 }
         }
-        .frame(width: 520, height: 500)
+        .frame(minWidth: 620, idealWidth: 680, minHeight: 480, idealHeight: 540)
+
     }
 }
 
