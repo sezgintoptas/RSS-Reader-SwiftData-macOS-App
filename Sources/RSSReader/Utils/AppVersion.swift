@@ -5,7 +5,7 @@ import Foundation
 
 enum AppVersion {
     /// Mevcut sürüm numarası (GitHub Release tag ile eşleşmeli)
-    static let current = "1.13.4"
+    static let current = "1.13.5"
 
     /// GitHub repo bilgileri (auto-updater için)
     static let githubOwner = "sezgintoptas"

@@ -1,3 +1,9 @@
+## 🆕 v1.13.5 — 2026-03-09
+
+### ✨ Yenilikler (Gemini 2.0 Flash)
+- **Model Yükseltmesi:** Yapay Zeka özetleri için daha hızlı ve kaliteli olan **Gemini 2.0 Flash** modeline geçiş yapıldı.
+- **İyileştirme:** AI Manager'da model adının dinamik olarak URL'e yansıtılması sağlandı, böylece en güncel modeller sorunsuz çalışacak hale getirildi.
+
 ## 🆕 v1.13.4 — 2026-03-09
 
 ### 🐛 Düzeltmeler
