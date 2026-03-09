@@ -683,7 +683,7 @@ private struct AISettingsTab: View {
                 HStack {
                     Text("Model")
                     Spacer()
-                    Text("Gemini 2.0 Flash")
+                    Text("Gemini 1.5 Flash")
                         .foregroundStyle(.secondary)
                         .monospaced()
                 }
@@ -705,7 +705,7 @@ private struct AISettingsTab: View {
         guard !apiKey.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         testStatus = .testing
 
-        let urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=\(apiKey)"
+        let urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=\(apiKey)"
         guard let url = URL(string: urlStr) else {
             testStatus = .failed("Geçersiz URL")
             return

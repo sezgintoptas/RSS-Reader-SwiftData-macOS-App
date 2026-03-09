@@ -18,7 +18,8 @@ final class AIManager: ObservableObject {
         UserDefaults.standard.string(forKey: "geminiApiKey") ?? ""
     }
 
-    private let geminiModel = "gemini-2.0-flash"
+    // Gemini 1.5 Flash — ücretsiz katmanda stabil, v1beta endpoint'i zorunlu
+    private let geminiModel = "gemini-1.5-flash-latest"
 
     private init() {}
 
@@ -100,7 +101,14 @@ final class AIManager: ObservableObject {
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 let msg = String(data: data, encoding: .utf8) ?? "Bilinmeyen hata"
                 logger.error("Gemini API hatası (\(http.statusCode)): \(msg)")
-                lastError = "Gemini API Hatası: \(http.statusCode)"
+                switch http.statusCode {
+                case 400: lastError = "Geçersiz istek — API anahtarını kontrol edin (400)"
+                case 401: lastError = "Yetkisiz — API anahtarı hatalı (401)"
+                case 403: lastError = "Erişim reddedildi — API etkin değil (403)"
+                case 404: lastError = "Model bulunamadı — API güncellemesi gerekebilir (404)"
+                case 429: lastError = "Kota aşıldı — günlük limit doldu (429)"
+                default:  lastError = "Gemini API Hatası: HTTP \(http.statusCode)"
+                }
                 return extractiveSummary(from: text)
             }
 

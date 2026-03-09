@@ -8,7 +8,7 @@ import SwiftUI
 /// onAppear → henüz analiz edilmemişse otomatik analiz başlatır.
 struct AIArticleSummaryPanel: View {
     let article: Article
-    @StateObject private var aiManager = AIManager.shared
+    @ObservedObject private var aiManager = AIManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

@@ -1,4 +1,11 @@
-## 🆕 v1.13.0 — 2026-03-09
+## 🆕 v1.13.1 — 2026-03-09
+
+### 🐛 Düzeltmeler
+- **Gemini API 404 Hatası:** Model adı `gemini-2.0-flash` → `gemini-1.5-flash-latest` olarak güncellendi (ücretsiz katmanda stabil ve erişilebilir model)
+- **AI Özet Paneli:** `@StateObject` → `@ObservedObject` düzeltmesi — singleton manager için state senkronizasyon sorunu giderildi
+- **Hata Mesajları:** Gemini API hata kodları (400/401/403/404/429) için daha açıklayıcı Türkçe mesajlar eklendi
+
+
 
 ### ✨ Yenilikler (Google Gemini AI Entegrasyonu)
 - **AI Makale Özeti:** Makale detay görünümünde ✨ "Özetle" butonuna basarak Google Gemini 2.0 Flash ile anında Türkçe özet alın
