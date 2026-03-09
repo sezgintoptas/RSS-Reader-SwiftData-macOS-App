@@ -19,7 +19,7 @@ final class AIManager: ObservableObject {
     }
 
     // gemini-flash-latest — kararlı, ücretsiz, v1beta endpoint
-    private let geminiModel = "gemini-flash-latest"
+    private let geminiModel = "gemini-2.0-flash"
 
     private init() {}
 
